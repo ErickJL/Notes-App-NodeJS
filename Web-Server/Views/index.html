@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Aplikasi Catatan Sederhana</title>
+    <style>
+      :root {
+        --background: #101114;
+        --primary: #1c1d20;
+        --secondary: #4a4d57;
+        --content: #00ffc4;
+        --text: #f9f9f9;
+      }
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      html {
+        font-family: Tamoha;
+        font-size: 16px;
+        color: var(--text);
+      }
+      body {
+        min-height: 100vh;
+        padding: 20px 100px;
+        background-color: var(--background);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+      }
+      h1 {
+        margin: 100px 0 20px;
+        font-size: 3rem;
+        font-weight: 800;
+        text-transform: uppercase;
+        color: var(--content);
+        text-align: center;
+      }
+      .container {
+        width: 800px;
+        max-width: 100%;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+      }
+      .container form {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+      }
+      #judul {
+        padding: 20px;
+        border-radius: 5px;
+        border: none;
+        background-color: var(--primary);
+        color: var(--text);
+      }
+      #isi {
+        padding: 20px;
+        border-radius: 5px;
+        border: none;
+        background-color: var(--primary);
+        color: var(--text);
+      }
+      #add-button {
+        padding: 10px;
+        border-radius: 5px;
+        border: none;
+        background-color: var(--content);
+        color: var(--primary);
+        font-weight: 700;
+        cursor: pointer;
+      }
+      #node-list {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+      }
+
+      .note {
+        margin: 10px 0;
+        padding: 0 16px;
+        background-color: var(--primary);
+        border-radius: 15px;
+        display: flex;
+        align-items: center;
+      }
+
+      .note .note-text {
+        padding: 15px 0 15px 15px;
+        flex-grow: 1;
+        transition: 0.15s ease;
+      }
+
+      .note .note-action {
+        display: flex;
+        gap: 10px;
+      }
+
+      .view-button, .edit-button, .delete-button {
+        padding: 3px;
+        background: none;
+        border: none;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        cursor: pointer;
+      }
+
+      .view-button svg {
+        fill: var(--secondary);
+        transition: 0.15s ease;
+      }
+      .view-button svg:hover {
+        fill: var(--text);
+      }
+      .edit-button svg {
+        fill: var(--secondary);
+        transition: 0.15s ease;
+      }
+      .edit-button svg:hover {
+        fill: var(--content);
+      }
+      .delete-button svg {
+        fill: var(--secondary);
+        transition: 0.15s ease;
+      }
+      .delete-button svg:hover {
+        fill: red;
+      }
+
+      .note-detail {
+        margin: 10px 0;
+        padding: 20px;
+        border-radius: 15px;
+        border: none;
+        background-color: var(--primary);
+        color: var(--text);
+      }
+      .note-detail > h2 {
+        color: var(--content);
+        margin: 0 0 10px;
+      }
+
+      .note-edit-form {
+        margin: 10px 0;
+        padding: 20px;
+        border-radius: 15px;
+        border: none;
+        background-color: var(--primary);
+        color: var(--text);
+      }
+
+      #note-list,
+      #note-view,
+      #note-edit {
+        display: none;
+      }
+
+      #edit-judul {
+        padding: 20px;
+        border-radius: 5px;
+        border: 1px solid var(--text);
+        background-color: var(--primary);
+        color: var(--text);
+      }
+      #edit-isi {
+        padding: 20px;
+        border-radius: 5px;
+        border: 1px solid var(--text);
+        background-color: var(--primary);
+        color: var(--text);
+      }
+      #submit-edit {
+        margin: 10px 0 0 10px;
+        padding: 10px 20px;
+        border-radius: 5px;
+        border: none;
+        background-color: var(--content);
+        color: var(--primary);
+        cursor: pointer;
+      }
+      #back-button {
+        margin: 10px 0 0;
+        padding: 10px;
+        border-radius: 5px;
+        border: 1px solid var(--content);
+        background-color: transparent;
+        color: var(--text);
+        cursor: pointer;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Selamat datang di Aplikasi Catatan Sederhana</h1>
+    <div class="container">
+      <form action="">
+        <input
+          type="text"
+          id="judul"
+          placeholder="Masukan Judul Catatan..."
+          autocomplete="off"
+        />
+        <textarea id="isi" placeholder="Masukan Isi Catatan..."></textarea>
+        <button id="add-button">Tambah Baru</button>
+      </form>
+      <ul id="note-list"></ul>
+      <div id="note-view"></div>
+      <div id="note-edit"></div>
+    </div>
+
+    <script>
+      const apiUrl = "/notes";
+      const noteForm = document.querySelector("form");
+      const notetitle = document.querySelector("#judul");
+      const noteText = document.querySelector("#isi");
+      const noteList = document.querySelector("#note-list");
+      const noteView = document.querySelector("#note-view");
+      const noteEdit = document.querySelector("#note-edit");
+
+      getAllNotes();
+
+      noteForm.addEventListener("submit", (e) => {
+        e.preventDefault();
+        addNote({ judul: notetitle.value, isi: noteText.value });
+        notetitle.value = "";
+        noteText.value = "";
+      });
+
+      async function addNote(note) {
+        await fetch(apiUrl, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(note),
+        });
+        getAllNotes();
+      }
+      async function deleteNote(title) {
+        if (confirm("Yakin ingin menghapus Catatan ini?")) {
+          await fetch(`${apiUrl}/${title}`, { method: "DELETE" });
+          getAllNotes();
+        }
+      }
+
+      async function viewDetail(title){
+        const response = await fetch(`${apiUrl}/${title}`);
+        const data = await response.json();
+        
+        noteView.innerHTML = "";
+
+        const nodeDetail = document.createElement("div");
+        nodeDetail.className = "note-detail";
+        nodeDetail.innerHTML = `
+        <h2>${data.judul}</h2>
+        <p>${data.isi}</p>
+        <button id="back-button">Kembali</button>
+        `;
+        nodeDetail
+            .querySelector("#back-button")
+            .addEventListener("click", function () {
+                noteList.style.display = "block";
+                noteView.style.display = "none";
+                noteEdit.style.display = "none";
+            });
+        noteView.appendChild(nodeDetail);
+
+        noteList.style.display = "none";
+        noteView.style.display = "block";
+        noteEdit.style.display = "none";
+      }
+      async function viewEdit(title){
+        const response = await fetch(`${apiUrl}/${title}`);
+        const data = await response.json();
+        
+        noteEdit.innerHTML = "";
+
+        const nodeDetail = document.createElement("div");
+        nodeDetail.className = "note-edit-form";
+        nodeDetail.innerHTML = `
+        <form action="">
+            <input
+            type="text"
+            id="edit-judul"
+            value="${data.judul}"
+            autocomplete="off"
+            />
+            <textarea id="edit-isi">${data.isi}</textarea>
+            <div>
+                <button type="button" id="back-button">Kembali</button>
+                <button id="submit-edit">Edit</button>
+            </div>
+        </form>
+        `;
+        nodeDetail.querySelector("form").addEventListener("submit", (e) => {
+            e.preventDefault();
+            editNote(data.judul, { judul: nodeDetail.querySelector("#edit-judul").value, isi: nodeDetail.querySelector("#edit-isi").value });
+            noteList.style.display = "block";
+            noteView.style.display = "none";
+            noteEdit.style.display = "none";
+        });
+        nodeDetail
+            .querySelector("#back-button")
+            .addEventListener("click", function () {
+                noteList.style.display = "block";
+                noteView.style.display = "none";
+                noteEdit.style.display = "none";
+            });
+        noteEdit.appendChild(nodeDetail);
+
+        noteList.style.display = "none";
+        noteView.style.display = "none";
+        noteEdit.style.display = "block";
+      }
+      async function editNote(title, note){
+        await fetch(`${apiUrl}/${title}`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(note),
+        });
+        getAllNotes();
+      }
+      async function getAllNotes() {
+        const response = await fetch(apiUrl);
+        const data = await response.json();
+
+        noteList.innerHTML = "";
+
+        data.forEach((note, i) => {
+            // noteList
+          const noteLI = document.createElement("li");
+          noteLI.className = "note";
+          noteLI.innerHTML = `
+        <p class="note-text">${i + 1}. ${note.judul}</p>
+        <div class="note-action">
+            <button class="view-button">
+                <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px"><path d="M480-320q75 0 127.5-52.5T660-500q0-75-52.5-127.5T480-680q-75 0-127.5 52.5T300-500q0 75 52.5 127.5T480-320Zm0-72q-45 0-76.5-31.5T372-500q0-45 31.5-76.5T480-608q45 0 76.5 31.5T588-500q0 45-31.5 76.5T480-392Zm0 192q-146 0-266-81.5T40-500q54-137 174-218.5T480-800q146 0 266 81.5T920-500q-54 137-174 218.5T480-200Zm0-300Zm0 220q113 0 207.5-59.5T832-500q-50-101-144.5-160.5T480-720q-113 0-207.5 59.5T128-500q50 101 144.5 160.5T480-280Z"/></svg>
+            </button>
+            <button class="edit-button">
+                <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px"><path d="M200-120q-33 0-56.5-23.5T120-200v-560q0-33 23.5-56.5T200-840h357l-80 80H200v560h560v-278l80-80v358q0 33-23.5 56.5T760-120H200Zm280-360ZM360-360v-170l367-367q12-12 27-18t30-6q16 0 30.5 6t26.5 18l56 57q11 12 17 26.5t6 29.5q0 15-5.5 29.5T897-728L530-360H360Zm481-424-56-56 56 56ZM440-440h56l232-232-28-28-29-28-231 231v57Zm260-260-29-28 29 28 28 28-28-28Z"/></svg>
+            </button>
+            <button class="delete-button">
+                <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px"><path d="M280-120q-33 0-56.5-23.5T200-200v-520h-40v-80h200v-40h240v40h200v80h-40v520q0 33-23.5 56.5T680-120H280Zm400-600H280v520h400v-520ZM360-280h80v-360h-80v360Zm160 0h80v-360h-80v360ZM280-720v520-520Z"/></svg>
+            </button>
+        </div>
+    `;
+          noteLI
+            .querySelector(".delete-button")
+            .addEventListener("click", function () {
+              deleteNote(note.judul);
+            });
+          noteLI
+            .querySelector(".view-button")
+            .addEventListener("click", function () {
+              viewDetail(note.judul);
+            });
+          noteLI
+            .querySelector(".edit-button")
+            .addEventListener("click", function () {
+              viewEdit(note.judul);
+            });
+          noteList.appendChild(noteLI);
+        });
+        noteList.style.display = "block";
+        noteView.style.display = "none";
+        noteEdit.style.display = "none";
+      }
+    </script>
+  </body>
+</html>
